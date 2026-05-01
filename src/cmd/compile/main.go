@@ -25,21 +25,33 @@ import (
 	"os"
 )
 
-var archInits = map[string]func(*ssagen.ArchInfo){
-	"386":      x86.Init,
-	"amd64":    amd64.Init,
-	"arm":      arm.Init,
-	"arm64":    arm64.Init,
-	"loong64":  loong64.Init,
-	"mips":     mips.Init,
-	"mipsle":   mips.Init,
-	"mips64":   mips64.Init,
-	"mips64le": mips64.Init,
-	"ppc64":    ppc64.Init,
-	"ppc64le":  ppc64.Init,
-	"riscv64":  riscv64.Init,
-	"s390x":    s390x.Init,
-	"wasm":     wasm.Init,
+func getArchInit(arch string) func(*ssagen.ArchInfo) {
+	switch arch {
+	case "386":
+		return x86.Init
+	case "amd64":
+		return amd64.Init
+	case "arm":
+		return arm.Init
+	case "arm64":
+		return arm64.Init
+	case "loong64":
+		return loong64.Init
+	case "mips", "mipsle":
+		return mips.Init
+	case "mips64", "mips64le":
+		return mips64.Init
+	case "ppc64", "ppc64le":
+		return ppc64.Init
+	case "riscv64":
+		return riscv64.Init
+	case "s390x":
+		return s390x.Init
+	case "wasm":
+		return wasm.Init
+	default:
+		return nil
+	}
 }
 
 func main() {
@@ -48,8 +60,8 @@ func main() {
 	log.SetPrefix("compile: ")
 
 	buildcfg.Check()
-	archInit, ok := archInits[buildcfg.GOARCH]
-	if !ok {
+	archInit := getArchInit(buildcfg.GOARCH)
+	if archInit == nil {
 		fmt.Fprintf(os.Stderr, "compile: unknown architecture %q\n", buildcfg.GOARCH)
 		os.Exit(2)
 	}
